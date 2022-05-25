@@ -142,10 +142,24 @@ public class RulesEvaluator {
             .setParallelism(sourceParallelism);
     DataStream<Transaction> transactionsStream =
         TransactionsSource.stringsStreamToTransactions(transactionsStringsStream);
+
+    // 在DataStreamSource对象上调用assignTimestampsAndWatermarks方法，自定义Timestamp提取规则和Watermark生成规则
+    // kafka的数据，不一定按照时间产生的时间到达flink,为了解决这个问题，需要引入Watermark。
+    // 为了与event time结合使用，流程序需要相应地设置一个时间特性吗？
+    // val env = StreamExecutionEnvironment.getExecutionEnvironment
+    // env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
+
     return transactionsStream.assignTimestampsAndWatermarks(
         new SimpleBoundedOutOfOrdernessTimestampExtractor<>(config.get(OUT_OF_ORDERNESS)));
   }
 
+
+  /**
+   *
+   * @param env
+   * @return
+   * @throws IOException
+   */
   private DataStream<Rule> getRulesUpdateStream(StreamExecutionEnvironment env) throws IOException {
 
     RulesSource.Type rulesSourceEnumType = getRulesSourceType();
@@ -170,16 +184,19 @@ public class RulesEvaluator {
         isLocal
             ? StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(flinkConfig)
             : StreamExecutionEnvironment.getExecutionEnvironment();
-
+    // 为了与event time结合使用，流程序需要相应地设置一个时间特性。
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
     env.getCheckpointConfig().setCheckpointInterval(config.get(CHECKPOINT_INTERVAL));
     env.getCheckpointConfig()
         .setMinPauseBetweenCheckpoints(config.get(MIN_PAUSE_BETWEEN_CHECKPOINTS));
-
+    // flink的 RestartStrategy 作用是什么？
+    //一句话概括，提升任务健壮性和容错性，保证任务可以实时产出数据。
     configureRestartStrategy(env, rulesSourceEnumType);
     return env;
   }
 
+  // 继承flink内置的Timestamp分配器BoundedOutOfOrdernessTimestampExtractor
+  // 抽象类中定义了一个抽象方法extractTimestamp(T element)，用来从事件数据中提取时间戳。
   private static class SimpleBoundedOutOfOrdernessTimestampExtractor<T extends Transaction>
       extends BoundedOutOfOrdernessTimestampExtractor<T> {
 
@@ -192,7 +209,7 @@ public class RulesEvaluator {
       return element.getEventTime();
     }
   }
-
+  // 重启策略：固定间隔 (Fixed delay)
   private void configureRestartStrategy(
       StreamExecutionEnvironment env, RulesSource.Type rulesSourceEnumType) {
     switch (rulesSourceEnumType) {
@@ -211,6 +228,15 @@ public class RulesEvaluator {
     public static final MapStateDescriptor<Integer, Rule> rulesDescriptor =
         new MapStateDescriptor<>(
             "rules", BasicTypeInfo.INT_TYPE_INFO, TypeInformation.of(Rule.class));
+    // 旁路输出流的OutputTag
+    // 注意 OutputTag 是如何根据旁路输出流所包含的元素类型进行类型化的。
+    // 可以通过以下方法将数据发送到旁路输出：
+    // ProcessFunction
+    // KeyedProcessFunction
+    // CoProcessFunction
+    // KeyedCoProcessFunction
+    // ProcessWindowFunction
+    // ProcessAllWindowFunction
 
     public static final OutputTag<String> demoSinkTag = new OutputTag<String>("demo-sink") {};
     public static final OutputTag<Long> latencySinkTag = new OutputTag<Long>("latency-sink") {};

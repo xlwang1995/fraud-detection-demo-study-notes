@@ -85,6 +85,11 @@ public class Transaction implements TimestampAssignable<Long> {
     Transaction transaction = new Transaction();
 
     try {
+
+      // Java中的集合各式各样，很多应用场景下需要对集合里面的元素进行遍历，有的集合有下标（ArrayList、Vector、LinkedList），
+      // 有的集合没有下标。有下标的集合可以轻易地通过下标进行遍历，没有下标的集合遍历起来就非常麻烦，因此Java引入了迭代器模式，
+      // 迭代器可以使得我们能够使用一种通用的方式遍历各种集合元素。
+
       Iterator<String> iter = tokens.iterator();
       transaction.transactionId = Long.parseLong(iter.next());
       transaction.eventTime =

@@ -21,6 +21,9 @@ package com.ververica.field.dynamicrules;
 import java.io.IOException;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 
+
+// ObjectMapper类(com.fasterxml.jackson.databind.ObjectMapper)是Jackson的主要类，它可以帮助我们快速的进行各个类型和Json类型的相互转换。
+
 public class JsonMapper<T> {
 
   private final Class<T> targetClass;
