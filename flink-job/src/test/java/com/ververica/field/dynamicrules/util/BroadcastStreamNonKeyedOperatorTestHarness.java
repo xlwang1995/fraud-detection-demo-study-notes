@@ -36,6 +36,8 @@ import org.apache.flink.util.Preconditions;
  * and watermarks into the operator. {@link java.util.Deque}s containing the emitted elements and
  * watermarks can be retrieved. you are free to modify these.
  */
+
+// // Transaction, Rule, Keyed<Transaction, String, Integer>
 public class BroadcastStreamNonKeyedOperatorTestHarness<IN1, IN2, OUT>
     extends AbstractStreamOperatorTestHarness<OUT> {
 

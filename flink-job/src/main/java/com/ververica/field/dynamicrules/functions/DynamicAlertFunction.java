@@ -82,8 +82,8 @@ public class DynamicAlertFunction
       Keyed<Transaction, String, Integer> value, ReadOnlyContext ctx, Collector<Alert> out)
       throws Exception {
 
+    // 添加原始数据到集合中
     long currentEventTime = value.getWrapped().getEventTime();
-
     addToStateValuesSet(windowState, currentEventTime, value.getWrapped());
 
     long ingestionTime = value.getWrapped().getIngestionTimestamp();
@@ -99,6 +99,7 @@ public class DynamicAlertFunction
     if (rule.getRuleState() == Rule.RuleState.ACTIVE) {
       Long windowStartForEvent = rule.getWindowStartFor(currentEventTime);
 
+      // 注册一个清理计时器。当它要移出范围时，此计时器将负责删除当前数据。
       long cleanupTime = (currentEventTime / 1000) * 1000;
       ctx.timerService().registerEventTimeTimer(cleanupTime);
 
@@ -204,6 +205,7 @@ public class DynamicAlertFunction
     return false;
   }
 
+  // 每当添加新规则时，我们将确定其时间窗口是否具有最大跨度，并将其存储在特殊保留的 WIDEST_RULE_KEY 下的广播状态。
   private void updateWidestWindowRule(Rule rule, BroadcastState<Integer, Rule> broadcastState)
       throws Exception {
     Rule widestWindowRule = broadcastState.get(WIDEST_RULE_KEY);
@@ -222,6 +224,13 @@ public class DynamicAlertFunction
     }
   }
 
+  /**
+   * onTimer 方法会触发窗口状态的清理
+   * @param timestamp
+   * @param ctx
+   * @param out
+   * @throws Exception
+   */
   @Override
   public void onTimer(final long timestamp, final OnTimerContext ctx, final Collector<Alert> out)
       throws Exception {

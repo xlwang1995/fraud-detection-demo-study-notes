@@ -70,6 +70,11 @@ public class Rule {
     }
   }
 
+  /**
+   * 给定规则中定义的窗口跨度和当前事件时间戳，然后计算窗口应该跨度多久。
+   * @param timestamp
+   * @return
+   */
   public long getWindowStartFor(Long timestamp) {
     Long ruleWindowMillis = getWindowMillis();
     return (timestamp - ruleWindowMillis);

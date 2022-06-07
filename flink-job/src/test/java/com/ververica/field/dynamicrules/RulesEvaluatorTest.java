@@ -40,6 +40,7 @@ import org.junit.Test;
 /** Tests for the {@link RulesEvaluator}. */
 public class RulesEvaluatorTest {
 
+  // 先测试keyBy之后的数据
   @Test
   public void shouldProduceKeyedOutput() throws Exception {
     RuleParser ruleParser = new RuleParser();
@@ -47,24 +48,39 @@ public class RulesEvaluatorTest {
         ruleParser.fromString("1,(active),(paymentType&payeeId),,(totalFare),(SUM),(>),(50),(20)");
     Transaction event1 = Transaction.fromString("1,2013-01-01 00:00:00,1001,1002,CSH,21.5,1");
 
-    try (BroadcastStreamNonKeyedOperatorTestHarness<
+    // 利用辅助类 BroadcastStreamNonKeyedOperatorTestHarness 的 getInitializedTestHarness 函数，
+    // 构造一个原始数据-规则-keyed结构的数据
+ try (BroadcastStreamNonKeyedOperatorTestHarness<
             Transaction, Rule, Keyed<Transaction, String, Integer>>
         testHarness =
             BroadcastStreamNonKeyedOperatorTestHarness.getInitializedTestHarness(
                 new DynamicKeyFunction(), Descriptors.rulesDescriptor)) {
 
+      // 测试 processElement2、processElement1 功能
       testHarness.processElement2(new StreamRecord<>(rule1, 12L));
-      testHarness.processElement1(new StreamRecord<>(event1, 15L));
+      testHarness.processElement2(new StreamRecord<>(event1, 15L));
 
+      // 想要的结果以队列形式呈现
+      // ConcurrentLinkedQueue 是一个基于链接节点的无界线程安全队列
       Queue<Object> expectedOutput = new ConcurrentLinkedQueue<>();
       expectedOutput.add(
           new StreamRecord<>(new Keyed<>(event1, "{paymentType=CSH;payeeId=1001}", 1), 15L));
+
+      // 使用了flink自带的测试类
+      // /**
+      //  * Compare the two queues containing operator/task output by converting them to an array first.
+      //  */
+      // public static <T> void assertOutputEquals(String message, Queue<T> expected, Queue<T> actual) {
+      //     Assert.assertArrayEquals(message, expected.toArray(), actual.toArray());
+      // }
+      // 比较两个队列结果
 
       TestHarnessUtil.assertOutputEquals(
           "Wrong dynamically keyed output", expectedOutput, testHarness.getOutput());
     }
   }
 
+  // 测试规则状态保存是否正确
   @Test
   public void shouldStoreRulesInBroadcastStateDuringDynamicKeying() throws Exception {
     RuleParser ruleParser = new RuleParser();
@@ -88,6 +104,8 @@ public class RulesEvaluatorTest {
     }
   }
 
+
+  // 测试flink侧边流输出
   @Test
   public void shouldOutputSimplestAlert() throws Exception {
     RuleParser ruleParser = new RuleParser();
@@ -132,6 +150,7 @@ public class RulesEvaluatorTest {
     }
   }
 
+  // 测试 "是否正确处理拥有相同时间戳的原始数据"
   @Test
   public void shouldHandleSameTimestampEventsCorrectly() throws Exception {
     RuleParser ruleParser = new RuleParser();
@@ -170,7 +189,7 @@ public class RulesEvaluatorTest {
           "Output was not correct.", expectedOutput, testHarness.getOutput());
     }
   }
-
+  // 测试 测试是否正确基于水印清除状态
   @Test
   public void shouldCleanupStateBasedOnWatermarks() throws Exception {
     RuleParser ruleParser = new RuleParser();
@@ -216,6 +235,8 @@ public class RulesEvaluatorTest {
 
       // Cleaning up on per-event fixed basis had caused event4 to delete event1 from the state,
       // hence event3 would not have fired. We expect event3 to fire.
+      // 在每个事件固定的基础上进行清理导致 event4 从状态中删除 event1，
+      // 因此 event3 不会被解雇。 我们期望 event3 触发。
       testHarness.processElement1(toStreamRecord(keyed3));
 
       ConcurrentLinkedQueue<Object> expectedOutput = new ConcurrentLinkedQueue<>();
