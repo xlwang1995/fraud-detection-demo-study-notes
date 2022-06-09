@@ -67,6 +67,9 @@ public class BroadcastStreamKeyedOperatorTestHarness<K, IN1, IN2, OUT>
       throws Exception {
     super(operator, maxParallelism, numSubtasks, subtaskIndex);
 
+    //ClosureCleaner——
+    // 闭包清理器是一个实用程序，它试图截断非静态内部类（为内联转换函数创建）的闭包（封闭实例）。
+    // 这使得非静态内部类在许多情况下可序列化，而 Java 的默认行为使它们在没有充分理由的情况下不可序列化。
     ClosureCleaner.clean(keySelector1, ExecutionConfig.ClosureCleanerLevel.RECURSIVE, false);
     ClosureCleaner.clean(keySelector2, ExecutionConfig.ClosureCleanerLevel.RECURSIVE, false);
     config.setStatePartitioner(0, keySelector1);

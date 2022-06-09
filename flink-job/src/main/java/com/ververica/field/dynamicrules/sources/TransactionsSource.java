@@ -41,45 +41,31 @@ public class TransactionsSource {
 
     String sourceType = config.get(TRANSACTIONS_SOURCE);
     TransactionsSource.Type transactionsSourceType =
-        TransactionsSource.Type.valueOf(sourceType.toUpperCase());
+            TransactionsSource.Type.valueOf(sourceType.toUpperCase());
 
     int transactionsPerSecond = config.get(RECORDS_PER_SECOND);
 
     switch (transactionsSourceType) {
       case KAFKA:
         Properties kafkaProps = KafkaUtils.initConsumerProperties(config);
-        // one topic as datasource
         String transactionsTopic = config.get(DATA_TOPIC);
-
         FlinkKafkaConsumer011<String> kafkaConsumer =
-            new FlinkKafkaConsumer011<>(transactionsTopic, new SimpleStringSchema(), kafkaProps);
+                new FlinkKafkaConsumer011<>(transactionsTopic, new SimpleStringSchema(), kafkaProps);
         kafkaConsumer.setStartFromLatest();
-
-        // define one more topics as datasource
-        List<String> topicList = new List<>();
-        consumer = new KafkaConsumer<>(kafkaProps);
-
-
         return kafkaConsumer;
       default:
         return new JsonGeneratorWrapper<>(new TransactionsGenerator(transactionsPerSecond));
     }
   }
 
-
   public static DataStream<Transaction> stringsStreamToTransactions(
-      DataStream<String> transactionStrings) {
-    return transactionStrings
-        .flatMap(new JsonDeserializer<Transaction>(Transaction.class))
-        .returns(Transaction.class)
-        .flatMap(new TimeStamper<Transaction>())
-        .returns(Transaction.class)
-        .name("Transactions Deserialization");
-  }
-  public static DataStream<Transaction> stringsStreamToTransactions2(
           DataStream<String> transactionStrings) {
-    Transaction transaction = new Transaction();
-    transactionStrings.build
+    return transactionStrings
+            .flatMap(new JsonDeserializer<Transaction>(Transaction.class))
+            .returns(Transaction.class)
+            .flatMap(new TimeStamper<Transaction>())
+            .returns(Transaction.class)
+            .name("Transactions Deserialization");
   }
 
   public enum Type {

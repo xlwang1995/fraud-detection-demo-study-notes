@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/webapp/demo-fraud-webapp.iml" filepath="$PROJECT_DIR$/webapp/demo-fraud-webapp.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/fraud-detection-demo-study-notes.iml" filepath="$PROJECT_DIR$/.idea/fraud-detection-demo-study-notes.iml" />
     </modules>
   </component>

@@ -225,16 +225,24 @@ public class RulesEvaluatorTest {
       testHarness.processElement2(new StreamRecord<>(rule1, 1L));
 
       testHarness.processElement1(toStreamRecord(keyed1));
+
+      //   watermark本质上是一个时间戳，且是动态变化的，会根据当前最大事件时间产生。
+      //   watermarks具体计算为：
+
+      //   watermark = 进入 Flink 窗口的最大的事件时间(maxEventTime)— 指定的延迟时间(t)
+
+      //   当watermark时间戳大于等于窗口结束时间时，意味着窗口结束，需要触发窗口计算。
+
       testHarness.watermark(event1.getEventTime() - watermarkDelay);
 
       testHarness.processElement1(toStreamRecord(keyed2));
-      testHarness.watermark(event2.getEventTime() - watermarkDelay);
+      testHarness.watermark(event2.getEventTime() - watemarkDelay);
 
       testHarness.processElement1(toStreamRecord(keyed4));
       testHarness.watermark(event4.getEventTime() - watermarkDelay);
 
       // Cleaning up on per-event fixed basis had caused event4 to delete event1 from the state,
-      // hence event3 would not have fired. We expect event3 to fire.
+      // hence event3 would not have fired. We expect event3 to fire.:
       // 在每个事件固定的基础上进行清理导致 event4 从状态中删除 event1，
       // 因此 event3 不会被解雇。 我们期望 event3 触发。
       testHarness.processElement1(toStreamRecord(keyed3));

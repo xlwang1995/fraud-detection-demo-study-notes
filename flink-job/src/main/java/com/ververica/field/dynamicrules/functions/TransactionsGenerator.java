@@ -38,6 +38,8 @@ public class TransactionsGenerator extends BaseGenerator<Transaction> {
   }
 
   @Override
+
+  // SplittableRandom：具有统一伪随机值的生成器
   public Transaction randomEvent(SplittableRandom rnd, long id) {
     long transactionId = rnd.nextLong(Long.MAX_VALUE);
     long payeeId = rnd.nextLong(MAX_PAYEE_ID);
